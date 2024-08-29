@@ -53,7 +53,6 @@ public class CarbonConsumption {
                 "\nstartDate=" + startDate +
                 "\nendDate=" + endDate +
                 "\namount=" + amount +
-                "\nduration=" + getDurationInDays() + " days" +
-                '}';
+                "\nduration=" + getDurationInDays() + " days" ;
     }
 }

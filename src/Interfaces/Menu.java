@@ -46,16 +46,16 @@ public class Menu {
                         displayUserDetails();
                         break;
                     case 4:
-                        deleteUser();
+                        listAllUsers();
                         break;
                     case 5:
                         System.out.println("reports");
                         break;
                     case 6:
-                        System.out.println("Exiting the application..6.");
+                        modifyUser();
                         break;
                     case 7:
-                        System.out.println("Exiting the application.7..");
+                        deleteUser();
                         break;
                     case 8:
                         System.out.println("Exiting the application...");
@@ -158,6 +158,53 @@ public class Menu {
         }
     }
 
+    private void modifyUser() {
+        listAllUsers();
+        System.out.print("Enter the User ID to modify (UUID format): ");
+        UUID userID;
+        try {
+            userID = UUID.fromString(scanner.nextLine());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid UUID format.");
+            return;
+        }
 
+        User user = userManager.getUser(userID);
+        if (user == null) {
+            System.out.println("User not found.");
+            return;
+        }
+
+        System.out.println("Current user details: " + user);
+        System.out.println("What would you like to modify?");
+        System.out.println("1. Name");
+        System.out.println("2. Age");
+        System.out.println("3. Cancel");
+        System.out.print("Enter your choice: ");
+
+        int choice = scanner.nextInt();
+        scanner.nextLine();
+
+        switch (choice) {
+            case 1:
+                System.out.print("Enter new name: ");
+                String newName = scanner.nextLine();
+                user.setName(newName);
+                System.out.println("Name updated successfully.");
+                break;
+            case 2:
+                System.out.print("Enter new age: ");
+                int newAge = scanner.nextInt();
+                scanner.nextLine();
+                user.setAge(newAge);
+                System.out.println("Age updated successfully.");
+                break;
+            case 3:
+                System.out.println("Modification canceled.");
+                break;
+            default:
+                System.out.println("Invalid choice. Please try again.");
+        }
+    }
 
 }
