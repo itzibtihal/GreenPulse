@@ -46,7 +46,7 @@ public class Menu {
                         displayUserDetails();
                         break;
                     case 4:
-
+                        deleteUser();
                         break;
                     case 5:
                         System.out.println("reports");
@@ -140,6 +140,23 @@ public class Menu {
             System.out.println(user.calculateTotalConsumption());
     }
 
+    private void deleteUser() {
+        listAllUsers();
+        System.out.print("Enter the User ID to delete (UUID format): ");
+        String userIdString = scanner.nextLine();
+
+        try {
+            UUID userId = UUID.fromString(userIdString);
+            if (userManager.getUser(userId) != null) {
+                userManager.removeUser(userId);
+                System.out.println("User and their carbon consumption records have been deleted successfully.");
+            } else {
+                System.out.println("User not found with the given ID.");
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid UUID format. Please try again.");
+        }
+    }
 
 
 
