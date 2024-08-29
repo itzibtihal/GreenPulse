@@ -1,0 +1,45 @@
+import java.util.UUID;
+
+class Userrr{
+    private UUID userID;  // Unique identifier
+    private String name;
+    private int age;
+
+    // Constructor
+    public entities.User(String name, int age) {
+        this.userID = UUID.randomUUID();
+        this.name = name;
+        this.age = age;
+    }
+
+
+    public UUID getUserID() {
+        return userID;
+    }
+
+    // Getters and setters
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "entities.User{" +
+                "userID=" + userID +
+                ", name='" + name + '\'' +
+                ", age=" + age +
+                '}';
+    }
+}
