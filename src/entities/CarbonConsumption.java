@@ -47,6 +47,18 @@ public class CarbonConsumption {
     }
 
 
+    public double getAmountForPeriod(LocalDate startDate, LocalDate endDate) {
+        LocalDate effectiveStart = startDate.isAfter(this.startDate) ? startDate : this.startDate;
+        LocalDate effectiveEnd = endDate.isBefore(this.endDate) ? endDate : this.endDate;
+        if (!effectiveStart.isAfter(effectiveEnd)) {
+            long daysInPeriod = ChronoUnit.DAYS.between(effectiveStart, effectiveEnd) + 1;
+            long totalDays = getDurationInDays();
+            return (amount / totalDays) * daysInPeriod;
+        }
+        return 0;
+    }
+
+
     @Override
     public String toString() {
         return "CarbonConsumption : \n" +

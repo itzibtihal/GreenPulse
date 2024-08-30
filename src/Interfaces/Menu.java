@@ -5,7 +5,9 @@ import entities.User;
 import services.UserManager;
 
 import java.time.LocalDate;
+import java.time.temporal.WeekFields;
 import java.util.InputMismatchException;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -30,7 +32,7 @@ public class Menu {
             System.out.println("6. Modify User");
             System.out.println("7. Delete User");
             System.out.println("8. Exit");
-            System.out.print("Enter your choice: ");
+            System.out.print("\n Enter your choice: ");
 
             try {
                 choice = scanner.nextInt();
@@ -49,7 +51,7 @@ public class Menu {
                         listAllUsers();
                         break;
                     case 5:
-                        System.out.println("reports");
+                        generateReport();
                         break;
                     case 6:
                         modifyUser();
@@ -58,7 +60,8 @@ public class Menu {
                         deleteUser();
                         break;
                     case 8:
-                        System.out.println("Exiting the application...");
+                        String message = "Exiting the application...";
+                        Uifunctions.printWelcomeScreen(message);
                         break;
                     default:
                         System.out.println("Invalid choice. Please try again.");
@@ -128,13 +131,11 @@ public class Menu {
             System.out.println("Invalid UUID format.");
             return;
         }
-
         User user = userManager.getUser(userID);
         if (user == null) {
             System.out.println("User not found.");
             return;
         }
-
         System.out.println(user);
         System.out.println("Carbon Consumption Records:");
             System.out.println(user.calculateTotalConsumption());
@@ -144,7 +145,6 @@ public class Menu {
         listAllUsers();
         System.out.print("Enter the User ID to delete (UUID format): ");
         String userIdString = scanner.nextLine();
-
         try {
             UUID userId = UUID.fromString(userIdString);
             if (userManager.getUser(userId) != null) {
@@ -206,5 +206,78 @@ public class Menu {
                 System.out.println("Invalid choice. Please try again.");
         }
     }
+
+//    private void generateReport() {
+//        listAllUsers();
+//        System.out.print("Enter user ID to generate report (UUID format): ");
+//        UUID userID;
+//        try {
+//            userID = UUID.fromString(scanner.nextLine());
+//        } catch (IllegalArgumentException e) {
+//            System.out.println("Invalid UUID format.");
+//            return;
+//        }
+//
+//        System.out.print("Enter report type (daily, weekly, monthly): ");
+//        String reportType = scanner.nextLine();
+//
+//        System.out.print("Enter the date for the report (YYYY-MM-DD): ");
+//        LocalDate reportDate;
+//        try {
+//            reportDate = LocalDate.parse(scanner.nextLine());
+//        } catch (Exception e) {
+//            System.out.println("Invalid date format.");
+//            return;
+//        }
+//
+//        userManager.generateReport(userID, reportType, reportDate);
+//    }
+
+    private void generateReport() {
+        listAllUsers();
+        System.out.print("Enter user ID to generate report (UUID format): ");
+        UUID userID;
+        try {
+            userID = UUID.fromString(scanner.nextLine());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid UUID format.");
+            return;
+        }
+
+        User user = userManager.getUser(userID);
+        if (user == null) {
+            System.out.println("User not found.");
+            return;
+        }
+
+        System.out.print("Enter report type (daily, weekly, monthly): ");
+        String reportType = scanner.nextLine().toLowerCase();
+
+        System.out.print("Enter the date for the report (YYYY-MM-DD): ");
+        LocalDate reportDate = LocalDate.parse(scanner.nextLine());
+
+        double consumption = 0;
+        switch (reportType) {
+            case "daily":
+                consumption = user.calculateDailyConsumption(reportDate);
+                System.out.printf("Daily carbon consumption report for %s for user %s: %.2f units%n", reportDate, user.getName(), consumption);
+                break;
+            case "weekly":
+                consumption = user.calculateWeeklyConsumption(reportDate);
+                System.out.printf("Weekly carbon consumption report from %s to %s for user %s: %.2f units%n",
+                        reportDate.with(WeekFields.of(Locale.getDefault()).dayOfWeek(), 1),
+                        reportDate.with(WeekFields.of(Locale.getDefault()).dayOfWeek(), 7),
+                        user.getName(), consumption);
+                break;
+            case "monthly":
+                consumption = user.calculateMonthlyConsumption(reportDate);
+                System.out.printf("Monthly carbon consumption report for %s for user %s: %.2f units%n",
+                        reportDate.getMonth(), user.getName(), consumption);
+                break;
+            default:
+                System.out.println("Invalid report type. Please choose from daily, weekly, or monthly.");
+        }
+    }
+
 
 }
