@@ -82,7 +82,7 @@ public class Menu {
         scanner.nextLine();
         User user = new User(name, age);
         userManager.addUser(user);
-        System.out.println("entities.User created successfully !");
+        System.out.println("User created successfully !");
     }
 
     private void listAllUsers() {
@@ -123,50 +123,67 @@ public class Menu {
 
     private void displayUserDetails() {
         listAllUsers();
-        System.out.print("Enter user ID to display details (UUID format): ");
-        UUID userID;
-        try {
-            userID = UUID.fromString(scanner.nextLine());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid UUID format.");
-            return;
+        UUID userID = null;
+        boolean validInput = false;
+
+        while (!validInput) {
+            System.out.print("Enter user ID to display details (UUID format): ");
+            try {
+                userID = UUID.fromString(scanner.nextLine());
+                validInput = true;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid UUID format. Please try again.");
+            }
         }
         User user = userManager.getUser(userID);
         if (user == null) {
-            System.out.println("User not found.");
+            System.out.println("User not found. Please try again.");
             return;
         }
-        System.out.println(user);
-        System.out.println("Carbon Consumption Records:");
-            System.out.println(user.calculateTotalConsumption());
+        System.out.println("User Details:");
+        System.out.println("ID: " + user.getUserID());
+        System.out.println("Name: " + user.getName());
+        System.out.println("Age: " + user.getAge());
+        double totalConsumption = userManager.calculateTotalConsumption(userID);
+        System.out.printf("Total Carbon Consumption: %.2f units%n", totalConsumption);
     }
 
     private void deleteUser() {
-        listAllUsers();
-        System.out.print("Enter the User ID to delete (UUID format): ");
-        String userIdString = scanner.nextLine();
-        try {
-            UUID userId = UUID.fromString(userIdString);
-            if (userManager.getUser(userId) != null) {
-                userManager.removeUser(userId);
-                System.out.println("User and their carbon consumption records have been deleted successfully.");
-            } else {
-                System.out.println("User not found with the given ID.");
+        while (true) {
+            listAllUsers();
+            System.out.print("Enter the User ID to delete (UUID format): ");
+            String userIdString = scanner.nextLine();
+
+            try {
+                UUID userId = UUID.fromString(userIdString);
+
+                if (userManager.getUser(userId) != null) {
+                    userManager.removeUser(userId);
+                    System.out.println("User and their carbon consumption records have been deleted successfully.");
+                    break;
+                } else {
+                    System.out.println("User not found with the given ID. Please try again.");
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid UUID format. Please try again.");
             }
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid UUID format. Please try again.");
         }
     }
 
     private void modifyUser() {
         listAllUsers();
-        System.out.print("Enter the User ID to modify (UUID format): ");
-        UUID userID;
-        try {
-            userID = UUID.fromString(scanner.nextLine());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid UUID format.");
-            return;
+
+        UUID userID = null;
+        boolean validID = false;
+
+        while (!validID) {
+            System.out.print("Enter the User ID to modify (UUID format): ");
+            try {
+                userID = UUID.fromString(scanner.nextLine());
+                validID = true;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid UUID format. Please try again.");
+            }
         }
 
         User user = userManager.getUser(userID);
@@ -176,108 +193,100 @@ public class Menu {
         }
 
         System.out.println("Current user details: " + user);
-        System.out.println("What would you like to modify?");
-        System.out.println("1. Name");
-        System.out.println("2. Age");
-        System.out.println("3. Cancel");
-        System.out.print("Enter your choice: ");
+        boolean validChoice = false;
 
-        int choice = scanner.nextInt();
-        scanner.nextLine();
+        while (!validChoice) {
+            System.out.println("What would you like to modify?");
+            System.out.println("1. Name");
+            System.out.println("2. Age");
+            System.out.println("3. Cancel");
+            System.out.print("Enter your choice: ");
 
-        switch (choice) {
-            case 1:
-                System.out.print("Enter new name: ");
-                String newName = scanner.nextLine();
-                user.setName(newName);
-                System.out.println("Name updated successfully.");
-                break;
-            case 2:
-                System.out.print("Enter new age: ");
-                int newAge = scanner.nextInt();
+            int choice;
+            try {
+                choice = scanner.nextInt();
                 scanner.nextLine();
-                user.setAge(newAge);
-                System.out.println("Age updated successfully.");
-                break;
-            case 3:
-                System.out.println("Modification canceled.");
-                break;
-            default:
-                System.out.println("Invalid choice. Please try again.");
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                scanner.nextLine();
+                continue;
+            }
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter new name: ");
+                    String newName = scanner.nextLine();
+                    user.setName(newName);
+                    System.out.println("Name updated successfully.");
+                    validChoice = true;
+                    break;
+                case 2:
+                    System.out.print("Enter new age: ");
+                    int newAge;
+                    try {
+                        newAge = scanner.nextInt();
+                        scanner.nextLine();
+                        user.setAge(newAge);
+                        System.out.println("Age updated successfully.");
+                        validChoice = true;
+                    } catch (InputMismatchException e) {
+                        System.out.println("Invalid input. Please enter a number.");
+                        scanner.nextLine();
+                    }
+                    break;
+                case 3:
+                    System.out.println("Modification canceled.");
+                    validChoice = true;
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
         }
     }
 
-//    private void generateReport() {
-//        listAllUsers();
-//        System.out.print("Enter user ID to generate report (UUID format): ");
-//        UUID userID;
-//        try {
-//            userID = UUID.fromString(scanner.nextLine());
-//        } catch (IllegalArgumentException e) {
-//            System.out.println("Invalid UUID format.");
-//            return;
-//        }
-//
-//        System.out.print("Enter report type (daily, weekly, monthly): ");
-//        String reportType = scanner.nextLine();
-//
-//        System.out.print("Enter the date for the report (YYYY-MM-DD): ");
-//        LocalDate reportDate;
-//        try {
-//            reportDate = LocalDate.parse(scanner.nextLine());
-//        } catch (Exception e) {
-//            System.out.println("Invalid date format.");
-//            return;
-//        }
-//
-//        userManager.generateReport(userID, reportType, reportDate);
-//    }
 
     private void generateReport() {
-        listAllUsers();
-        System.out.print("Enter user ID to generate report (UUID format): ");
+        userManager.listAllUsers();
         UUID userID;
-        try {
-            userID = UUID.fromString(scanner.nextLine());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid UUID format.");
-            return;
+        while (true) {
+            System.out.print("Enter user ID to generate report (UUID format): ");
+            try {
+                userID = UUID.fromString(scanner.nextLine());
+                User user = userManager.getUser(userID);
+                if (user == null) {
+                    System.out.println("User not found. Please enter a valid user ID.");
+                } else {
+                    break;
+                }
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid UUID format. Please enter a valid UUID.");
+            }
         }
 
-        User user = userManager.getUser(userID);
-        if (user == null) {
-            System.out.println("User not found.");
-            return;
+        String reportType;
+        LocalDate reportDate;
+
+        while (true) {
+            System.out.print("Enter report type (daily, weekly, monthly): ");
+            reportType = scanner.nextLine().toLowerCase();
+            if (reportType.equals("daily") || reportType.equals("weekly") || reportType.equals("monthly")) {
+                break;
+            } else {
+                System.out.println("Invalid report type. Please enter 'daily', 'weekly', or 'monthly'.");
+            }
         }
 
-        System.out.print("Enter report type (daily, weekly, monthly): ");
-        String reportType = scanner.nextLine().toLowerCase();
-
-        System.out.print("Enter the date for the report (YYYY-MM-DD): ");
-        LocalDate reportDate = LocalDate.parse(scanner.nextLine());
-
-        double consumption = 0;
-        switch (reportType) {
-            case "daily":
-                consumption = user.calculateDailyConsumption(reportDate);
-                System.out.printf("Daily carbon consumption report for %s for user %s: %.2f units%n", reportDate, user.getName(), consumption);
+        while (true) {
+            System.out.print("Enter the date for the report (YYYY-MM-DD): ");
+            try {
+                reportDate = LocalDate.parse(scanner.nextLine());
                 break;
-            case "weekly":
-                consumption = user.calculateWeeklyConsumption(reportDate);
-                System.out.printf("Weekly carbon consumption report from %s to %s for user %s: %.2f units%n",
-                        reportDate.with(WeekFields.of(Locale.getDefault()).dayOfWeek(), 1),
-                        reportDate.with(WeekFields.of(Locale.getDefault()).dayOfWeek(), 7),
-                        user.getName(), consumption);
-                break;
-            case "monthly":
-                consumption = user.calculateMonthlyConsumption(reportDate);
-                System.out.printf("Monthly carbon consumption report for %s for user %s: %.2f units%n",
-                        reportDate.getMonth(), user.getName(), consumption);
-                break;
-            default:
-                System.out.println("Invalid report type. Please choose from daily, weekly, or monthly.");
+            } catch (Exception e) {
+                System.out.println("Invalid date format. Please enter the date in YYYY-MM-DD format.");
+            }
         }
+
+        userManager.generateReport(userID, reportType, reportDate);
     }
-
 
 }
