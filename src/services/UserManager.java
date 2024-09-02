@@ -4,14 +4,17 @@ import entities.CarbonConsumption;
 import entities.User;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.WeekFields;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Scanner;
 
 public class UserManager {
     private Map<UUID, User> userMap;
-    private Scanner scanner;
 
     public UserManager() {
         this.userMap = new HashMap<>();
@@ -20,9 +23,11 @@ public class UserManager {
     public void addUser(User user) {
         userMap.put(user.getUserID(), user);
     }
+
     public void removeUser(UUID userID) {
         userMap.remove(userID);
     }
+
     public User getUser(UUID userID) {
         return userMap.get(userID);
     }
@@ -30,8 +35,61 @@ public class UserManager {
     public void addConsumptionToUser(UUID userID, CarbonConsumption consumption) {
         User user = getUser(userID);
         if (user != null) {
-            user.addConsumption(consumption);
+            user.getConsumptions().add(consumption);
         }
+    }
+
+    public double calculateTotalConsumption(UUID userID) {
+        User user = getUser(userID);
+        return user.getConsumptions().stream()
+                .mapToDouble(CarbonConsumption::getAmount)
+                .sum();
+    }
+
+    public double calculateDailyConsumption(UUID userID, LocalDate reportDate) {
+        User user = getUser(userID);
+        return user.getConsumptions().stream()
+                .filter(consumption -> !consumption.getStartDate().isAfter(reportDate) && !consumption.getEndDate().isBefore(reportDate))
+                .mapToDouble(consumption -> {
+                    long durationInDays = ChronoUnit.DAYS.between(consumption.getStartDate(), consumption.getEndDate()) + 1;
+                    return consumption.getAmount() / durationInDays;
+                })
+                .sum();
+    }
+
+    public double calculateWeeklyConsumption(UUID userID, LocalDate reportDate) {
+        User user = getUser(userID);
+        LocalDate weekStart = reportDate.with(WeekFields.of(Locale.getDefault()).dayOfWeek(), 1);
+        LocalDate weekEnd = weekStart.plusDays(6);
+        return user.getConsumptions().stream()
+                .filter(consumption -> !consumption.getStartDate().isAfter(weekEnd) && !consumption.getEndDate().isBefore(weekStart))
+                .mapToDouble(consumption -> {
+                    long overlapDays = calculateOverlapDays(consumption, weekStart, weekEnd);
+                    long totalDays = ChronoUnit.DAYS.between(consumption.getStartDate(), consumption.getEndDate()) + 1;
+                    return (consumption.getAmount() / totalDays) * overlapDays;
+                })
+                .sum();
+    }
+
+    public double calculateMonthlyConsumption(UUID userID, LocalDate reportDate) {
+        User user = getUser(userID);
+        YearMonth month = YearMonth.from(reportDate);
+        LocalDate monthStart = month.atDay(1);
+        LocalDate monthEnd = month.atEndOfMonth();
+        return user.getConsumptions().stream()
+                .filter(consumption -> !consumption.getStartDate().isAfter(monthEnd) && !consumption.getEndDate().isBefore(monthStart))
+                .mapToDouble(consumption -> {
+                    long overlapDays = calculateOverlapDays(consumption, monthStart, monthEnd);
+                    long totalDays = ChronoUnit.DAYS.between(consumption.getStartDate(), consumption.getEndDate()) + 1;
+                    return (consumption.getAmount() / totalDays) * overlapDays;
+                })
+                .sum();
+    }
+
+    private long calculateOverlapDays(CarbonConsumption consumption, LocalDate start, LocalDate end) {
+        LocalDate overlapStart = consumption.getStartDate().isAfter(start) ? consumption.getStartDate() : start;
+        LocalDate overlapEnd = consumption.getEndDate().isBefore(end) ? consumption.getEndDate() : end;
+        return ChronoUnit.DAYS.between(overlapStart, overlapEnd) + 1;
     }
 
     public void listAllUsers() {
@@ -44,12 +102,10 @@ public class UserManager {
         int idWidth = 36;
         int nameWidth = 20;
         int ageWidth = 3;
-        // Print header
         System.out.println(new String(new char[idWidth + nameWidth + ageWidth + 6]).replace('\0', '-'));
         System.out.printf("%-" + idWidth + "s | %-" + nameWidth + "s | %-" + ageWidth + "s%n", "User ID", "Name", "Age");
         System.out.println(new String(new char[idWidth + nameWidth + ageWidth + 6]).replace('\0', '-'));
 
-        // Print user details
         for (User user : userMap.values()) {
             System.out.printf("%-" + idWidth + "s | %-" + nameWidth + "s | %-" + ageWidth + "d%n",
                     user.getUserID(),
@@ -59,65 +115,34 @@ public class UserManager {
         }
     }
 
-    public Map<UUID, User> getAllUsers() {
-        return userMap;
-    }
-
-    public void deleteUser() {
-        System.out.print("Enter the User ID to delete: ");
-        String userIdString = scanner.nextLine();
-        try {
-            UUID userId = UUID.fromString(userIdString);
-            if (userMap.containsKey(userId)) {
-                userMap.remove(userId);
-                System.out.println("User and their carbon consumption records have been deleted successfully.");
-            } else {
-                System.out.println("User not found with the given ID.");
-            }
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid UUID format. Please try again.");
-        }
-    }
-
     public void generateReport(UUID userID, String reportType, LocalDate reportDate) {
-        User user = getUser(userID);
-        if (user == null) {
-            System.out.println("User not found.");
-            return;
-        }
-        double totalConsumption = 0;
         switch (reportType.toLowerCase()) {
             case "daily":
-                totalConsumption = user.getConsumptions().stream()
-                        .filter(consumption -> !consumption.getStartDate().isAfter(reportDate) && !consumption.getEndDate().isBefore(reportDate))
-                        .mapToDouble(consumption -> consumption.getAmount() / consumption.getDurationInDays())
-                        .sum();
-                System.out.println("Daily carbon consumption report for " + reportDate + " for user " + user.getName() + ": " + totalConsumption + " units");
+                double dailyConsumption = calculateDailyConsumption(userID, reportDate);
+                System.out.printf("Daily carbon consumption report for %s for user %s: %.2f units%n",
+                        reportDate,
+                        getUser(userID).getName(),
+                        dailyConsumption);
                 break;
 
             case "weekly":
-                LocalDate weekStart = reportDate.minusDays(reportDate.getDayOfWeek().getValue() % 7);
-                LocalDate weekEnd = weekStart.plusDays(6);
-                totalConsumption = user.getConsumptions().stream()
-                        .filter(consumption -> !consumption.getEndDate().isBefore(weekStart) && !consumption.getStartDate().isAfter(weekEnd))
-                        .mapToDouble(CarbonConsumption::getAmount)
-                        .sum();
-                System.out.println("Weekly carbon consumption report from " + weekStart + " to " + weekEnd + " for user " + user.getName() + ": " + totalConsumption + " units");
+                double weeklyConsumption = calculateWeeklyConsumption(userID, reportDate);
+                System.out.printf("Weekly carbon consumption report for the week starting %s for user %s: %.2f units%n",
+                        reportDate,
+                        getUser(userID).getName(),
+                        weeklyConsumption);
                 break;
 
             case "monthly":
-                LocalDate monthStart = reportDate.withDayOfMonth(1);
-                LocalDate monthEnd = reportDate.withDayOfMonth(reportDate.lengthOfMonth());
-                totalConsumption = user.getConsumptions().stream()
-                        .filter(consumption -> !consumption.getEndDate().isBefore(monthStart) && !consumption.getStartDate().isAfter(monthEnd))
-                        .mapToDouble(CarbonConsumption::getAmount)
-                        .sum();
-                System.out.println("Monthly carbon consumption report for " + reportDate.getMonth() + " " + reportDate.getYear() + " for user " + user.getName() + ": " + totalConsumption + " units");
+                double monthlyConsumption = calculateMonthlyConsumption(userID, reportDate);
+                System.out.printf("Monthly carbon consumption report for %s %d for user %s: %.2f units%n",
+                        reportDate.getMonth(),
+                        reportDate.getYear(),
+                        getUser(userID).getName(),
+                        monthlyConsumption);
                 break;
-
             default:
                 System.out.println("Invalid report type.");
         }
     }
-
 }

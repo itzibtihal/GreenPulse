@@ -15,6 +15,8 @@ public class CarbonConsumption {
         this.amount = amount;
     }
 
+    public CarbonConsumption() {
+    }
 
     public LocalDate getStartDate() {
         return startDate;
@@ -44,18 +46,6 @@ public class CarbonConsumption {
     // calculate duration
     public long getDurationInDays() {
         return ChronoUnit.DAYS.between(startDate, endDate);
-    }
-
-
-    public double getAmountForPeriod(LocalDate startDate, LocalDate endDate) {
-        LocalDate effectiveStart = startDate.isAfter(this.startDate) ? startDate : this.startDate;
-        LocalDate effectiveEnd = endDate.isBefore(this.endDate) ? endDate : this.endDate;
-        if (!effectiveStart.isAfter(effectiveEnd)) {
-            long daysInPeriod = ChronoUnit.DAYS.between(effectiveStart, effectiveEnd) + 1;
-            long totalDays = getDurationInDays();
-            return (amount / totalDays) * daysInPeriod;
-        }
-        return 0;
     }
 
 
