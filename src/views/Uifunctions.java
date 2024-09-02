@@ -1,4 +1,4 @@
-package Interfaces;
+package views;
 
 public class Uifunctions {
 

@@ -1,5 +1,5 @@
-import Interfaces.Menu;
-import Interfaces.Uifunctions;
+import views.Menu;
+import views.Uifunctions;
 
 public class Main {
     public static void main(String[] args) {

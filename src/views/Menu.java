@@ -1,13 +1,12 @@
-package Interfaces;
+package views;
 
 import entities.CarbonConsumption;
 import entities.User;
 import services.UserManager;
 
 import java.time.LocalDate;
-import java.time.temporal.WeekFields;
+import java.time.format.DateTimeParseException;
 import java.util.InputMismatchException;
-import java.util.Locale;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -74,15 +73,44 @@ public class Menu {
         } while (choice != 8);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     private void createUser() {
         System.out.print("Enter user name: ");
         String name = scanner.nextLine();
-        System.out.print("Enter user age: ");
-        int age = scanner.nextInt();
-        scanner.nextLine();
+
+        int age = -1;
+        boolean validAge = false;
+
+        while (!validAge) {
+            System.out.print("Enter user age: ");
+            try {
+                age = scanner.nextInt();
+                scanner.nextLine();
+                if (age < 0) {
+                    System.out.println("Age cannot be negative. Please enter a valid age.");
+                } else {
+                    validAge = true;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                scanner.nextLine();
+            }
+        }
         User user = new User(name, age);
         userManager.addUser(user);
-        System.out.println("User created successfully !");
+        System.out.println("User created successfully!");
     }
 
     private void listAllUsers() {
@@ -91,13 +119,18 @@ public class Menu {
 
     private void addConsumption() {
         listAllUsers();
-        System.out.print("Enter user ID to add consumption (UUID format): ");
-        UUID userID;
-        try {
-            userID = UUID.fromString(scanner.nextLine());
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid UUID format.");
-            return;
+
+        UUID userID = null;
+        boolean validID = false;
+
+        while (!validID) {
+            System.out.print("Enter user ID to add consumption (UUID format): ");
+            try {
+                userID = UUID.fromString(scanner.nextLine());
+                validID = true;
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid UUID format. Please try again.");
+            }
         }
 
         User user = userManager.getUser(userID);
@@ -106,15 +139,50 @@ public class Menu {
             return;
         }
 
-        System.out.print("Enter start date (YYYY-MM-DD): ");
-        LocalDate startDate = LocalDate.parse(scanner.nextLine());
+        LocalDate startDate = null;
+        boolean validStartDate = false;
 
-        System.out.print("Enter end date (YYYY-MM-DD): ");
-        LocalDate endDate = LocalDate.parse(scanner.nextLine());
+        while (!validStartDate) {
+            System.out.print("Enter start date (YYYY-MM-DD): ");
+            try {
+                startDate = LocalDate.parse(scanner.nextLine());
+                validStartDate = true;
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Please use YYYY-MM-DD format.");
+            }
+        }
 
-        System.out.print("Enter carbon amount: ");
-        double amount = scanner.nextDouble();
-        scanner.nextLine();
+        LocalDate endDate = null;
+        boolean validEndDate = false;
+
+        while (!validEndDate) {
+            System.out.print("Enter end date (YYYY-MM-DD): ");
+            try {
+                endDate = LocalDate.parse(scanner.nextLine());
+                validEndDate = true;
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date format. Please use YYYY-MM-DD format.");
+            }
+        }
+
+        double amount = -1;
+        boolean validAmount = false;
+
+        while (!validAmount) {
+            System.out.print("Enter carbon amount: ");
+            try {
+                amount = scanner.nextDouble();
+                scanner.nextLine();
+                if (amount < 0) {
+                    System.out.println("Carbon amount cannot be negative. Please enter a valid amount.");
+                } else {
+                    validAmount = true;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                scanner.nextLine();
+            }
+        }
 
         CarbonConsumption consumption = new CarbonConsumption(startDate, endDate, amount);
         userManager.addConsumptionToUser(userID, consumption);
@@ -243,7 +311,6 @@ public class Menu {
             }
         }
     }
-
 
     private void generateReport() {
         userManager.listAllUsers();
